@@ -1,0 +1,619 @@
+/**
+ * JavaCC template file created by SF JavaCC plugin 1.5.28+ wizard for JavaCC 1.5.0+
+ */
+options
+{
+  LOOKAHEAD= 3;
+
+
+  static = true;
+  FORCE_LA_CHECK = true;
+  CHOICE_AMBIGUITY_CHECK = 5;
+}
+
+PARSER_BEGIN(Parser)
+package org.syno.sync.redo.parsing.parser;
+import org.syno.sync.redo.parsing.ast.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.ArrayList;
+import java.io.InputStreamReader;
+
+public class Parser
+{
+  public static void parseAST(InputStreamReader in)
+  {
+    Parser parser = new Parser(in);
+  }	
+
+  public static Expression mkBinaryOperation(
+  BinaryOperator op, 
+  List < Expression > operands, 
+  int beginIndex)
+  {
+    if (beginIndex == operands.size() - 1)
+    {
+      return operands.get(beginIndex);
+    }
+    Expression expGauche = operands.get(beginIndex);
+    Expression expDroite = mkBinaryOperation(op, operands, beginIndex + 1);
+    return new BinaryOperatorApplication(op, expGauche, expDroite);
+  }
+
+  public static Expression mkBinaryOperation(BinaryOperator op, 
+  List < Expression > operands)
+  {
+    return mkBinaryOperation(op, operands, 0);
+  }
+}
+
+PARSER_END(Parser)
+
+/**
+* PARTIE «LEXING»
+**/
+
+SKIP :
+{
+  " "
+| "\r"
+| "\t"
+| "\n"
+}
+
+TOKEN :
+{
+  < AND : "&&" >
+| < OR : "||" >
+| < NOT : "!" >
+| < EQUAL : "==" >
+| < GT : ">" >
+| < GE : ">=" >
+| < LT : "<" >
+| < LE : "<=" >
+| < NEQ : "!=" >
+| < PLUS : "+" >
+| < MINUS : "-" >
+| < MULTIPLY : "*" >
+| < DIV : "/" >
+| < MOD : "%" >
+| < ARROW : "->" >
+| < IMPL : "=>" >
+| < AFFECT : "=" >
+| < SEMICOL : ";" >
+| < COMMA : "," >
+| < COLON : ":" >
+| < LPAR : "(" >
+| < RPAR : ")" >
+| < LBRACKET : "{" >
+| < RBRACKET : "}" >
+}
+
+TOKEN :
+{
+  < CONST_INT : (< DIGIT >)+ >
+| < CONST_FLOAT : (< DIGIT >)+ "." (< DIGIT >)* >
+| < #DIGIT : [ "0"-"9" ] >
+}
+
+TOKEN :
+{
+  < CONST_BOOL :
+    "true"
+  | "false" >
+| < BOOL : "bool" >
+| < INT : "int" >
+| < REAL : "real" >
+| < IF : "if" >
+| < THEN : "then" >
+| < ELSE : "else" >
+| < NODE : "node" >
+| < PRE : "pre" >
+| < RETURNS : "returns" >
+| < VAR : "var" >
+| < EVERY : "every" >
+}
+
+TOKEN :
+{
+  < IDENT :
+    (
+      [ "a"-"z" ]
+    | [ "A"-"Z" ]
+    | "_"
+    )+ >
+}
+
+/** PARSING **/
+
+Program program() :
+{
+  List < Node > nodes;
+}
+{
+  nodes = nodelist() < EOF >
+  {
+    return new Program(nodes);
+  }
+}
+
+List < Node > nodelist() :
+{
+  Node firstNode;
+  List < Node > liste;
+}
+{
+  firstNode = node() liste = nodelist()
+  {
+    liste.add(firstNode);
+    return liste;
+  }
+|
+  {
+    return new ArrayList < Node > ();
+  }
+}
+
+Node node() :
+{
+  String nodeName;
+}
+{
+  < NODE > nodeName = ident() 
+  < LPAR > paramList() < RPAR > 
+  < RETURNS > nonNullParamList() 
+  < LBRACKET > eqList() < RBRACKET >
+  {
+    return new Node();
+  }
+}
+
+List < Parameter > paramList() :
+{
+  List < Parameter > paramList;
+}
+{
+  paramList = nonNullParamList()
+  {
+    return paramList;
+  }
+|
+  {
+    return new ArrayList < Parameter > ();
+  }
+}
+
+List < Parameter > nonNullParamList() :
+{
+  List < Parameter > param, paramList2;
+}
+{
+  param = param() < SEMICOL > paramList2 = nonNullParamList()
+  {
+    for (Parameter p : param) 
+    paramList2.add(p);
+    return paramList2;
+  }
+  param = param()
+  {
+    return param;
+  }
+}
+
+List < Parameter > param() :
+{
+  List < String > identifiers;
+  Type type;
+}
+{
+  identifiers = nonVoidIdentifierList() < COLON > type = type()
+  {
+    List < Parameter > params = new ArrayList < Parameter > ();
+    for (String idt : identifiers) 
+    params.add(new Parameter(idt, type));
+    return params;
+  }
+}
+
+List < String > nonVoidIdentifierList() :
+{
+  String identifier;
+  List < String > idList;
+}
+{
+  identifier = ident()
+  {
+    return Arrays.asList(identifier);
+  }
+| identifier = ident() < COMMA > idList = nonVoidIdentifierList()
+  {
+    idList.add(identifier);
+    return idList;
+  }
+}
+
+String ident() :
+{
+  Token id;
+}
+{
+  id = < IDENT >
+  {
+    return id.image;
+  }
+}
+
+Type type() :
+{}
+{
+  < BOOL >
+  {
+    return Type.BOOL;
+  }
+| < INT >
+  {
+    return Type.INT;
+  }
+| < REAL >
+  {
+    return Type.REAL;
+  }
+}
+
+List < Equation > eqList() :
+{
+  Equation eq;
+  List < Equation > lst;
+}
+{
+  eq = equation() lst = eqList()
+  {
+    lst.add(eq);
+    return lst;
+  }
+|
+  {
+    return new ArrayList < Equation > ();
+  }
+}
+
+Equation equation() :
+{
+  Pattern patt;
+  Expression exp;
+}
+{
+  patt = pattern() < AFFECT > exp = expr() < SEMICOL >
+  {
+    return new Equation(patt, exp);
+  }
+}
+
+Pattern pattern() :
+{
+  String ident;
+  List < String > strList;
+}
+{
+  ident = ident()
+  {
+    return new Pattern(Arrays.asList(ident));
+  }
+  < LPAR > strList = nonVoidIdentifierList() < RPAR >
+  {
+    return new Pattern(strList);
+  }
+}
+
+/**
+	%left EVERY
+	%left MERGE
+	%left WHEN
+	
+	%right ARROW
+	%left IMPL
+	%left OR
+	%left AND
+	%left COMP EQUAL NEQ
+	%left PLUS MINUS
+	%left STAR SLASH DIV MOD
+	
+	%nonassoc uminus   
+	%nonassoc NOT PRE  not pre 
+*/
+Expression expr() :
+{
+  Expression e;
+}
+{
+  e = conditionalExpr()
+  {
+    return e;
+  }
+| e = everyExp()
+  {
+    return e;
+  }
+}
+
+Expression conditionalExpr() :
+{
+  Expression ebool, ethen, eelse;
+}
+{
+  < IF > ebool = expr() < THEN > ethen = expr() < ELSE > eelse = expr()
+  {
+    return new Conditional(ebool, ethen, eelse);
+  }
+}
+
+Expression everyExp() :
+{
+  Expression e1, e2;
+  List < Expression > expList = new ArrayList < Expression > ();
+}
+{
+  e1 = mergeExp()
+  {
+    expList.add(e1);
+  }
+  (
+    < EVERY > e2 = mergeExp()
+    {
+      expList.add(e2);
+    }
+  )*
+  {
+    return mkBinaryOperation(BinaryOperator.PLUS, expList);
+  }
+}
+
+/**
+	Syntaxe : MERGE(expr1)(C1 => )²
+*/
+/**
+TODO:
+	MERGE
+	WHEN
+**/
+Expression mergeExp() :
+{
+  Expression e;
+}
+{
+  e = arrowExp()
+  {
+    return e;
+  }
+}
+
+// Assoc droite ! 
+Expression arrowExp() :
+{
+  Expression e1, e2;
+  List < Expression > expList = new ArrayList < Expression > ();
+}
+{
+  (
+    e1 = orExp() < ARROW >
+    {
+      expList.add(e1);
+    }
+  )+
+  e2 = orExp()
+  {
+    expList.add(e1);
+  }
+  {
+    return mkBinaryOperation(BinaryOperator.FOLLOWED_BY, expList);
+  }
+}
+
+Expression orExp() :
+{
+  Expression e1, e2;
+}
+{
+  e1 = andExp()
+  (
+    < OR > e2 = andExp()
+    {
+      e1 = new BinaryOperatorApplication(BinaryOperator.OR, e1, e2);
+    }
+  )*
+  {
+    return e1;
+  }
+}
+
+Expression andExp() :
+{
+  Expression e1, e2;
+  List < Expression > expList = new ArrayList < Expression > ();
+}
+{
+  e1 = equalExp()
+  {
+    expList.add(e1);
+  }
+  (
+    < AND > e2 = equalExp()
+    {
+      expList.add(e2);
+    }
+  )*
+  {
+    return mkBinaryOperation(BinaryOperator.AND, expList);
+  }
+}
+
+Expression equalExp() :
+{
+  Expression e1, e2;
+}
+{
+  e1 = compExp()
+  (
+    (
+      < EQUAL > e2 = compExp()
+      {
+        e1 = new BinaryOperatorApplication(BinaryOperator.EQ, e1, e2);
+      }
+    )
+  |
+    (
+      < NEQ > e2 = compExp()
+      {
+        e1 = new BinaryOperatorApplication(BinaryOperator.NEQ, e1, e2);
+      }
+    )
+  )+
+  {
+    return e1;
+  }
+}
+
+Expression compExp() :
+{
+  Expression e1, e2;
+}
+{
+  e1 = addExp()
+  (
+    (
+      < GT > e2 = addExp()
+      {
+        e1 = new BinaryOperatorApplication(BinaryOperator.GREATER_THAN, e1, e2);
+      }
+    )
+  |
+    (
+      < GE > e2 = addExp()
+      {
+        e1 = new BinaryOperatorApplication(BinaryOperator.GREATER_OR_EQUAL, e1, e2);
+      }
+    )
+  |
+    (
+      < LT > e2 = addExp()
+      {
+        e1 = new BinaryOperatorApplication(BinaryOperator.LESSER_THAN, e1, e2);
+      }
+    )
+    (
+      < LE > e2 = addExp()
+      {
+        e1 = new BinaryOperatorApplication(BinaryOperator.LESSER_OR_EQUAL, e1, e2);
+      }
+    )
+  )+
+  {
+    return e1;
+  }
+}
+
+Expression addExp() :
+{
+  Expression e1, e2;
+  List < Expression > expList = new ArrayList < Expression > ();
+}
+{
+  e1 = multExp()
+  (
+    (
+      < PLUS > e2 = multExp()
+      {
+        e1 = new BinaryOperatorApplication(BinaryOperator.PLUS, e1, e2);
+      }
+    )
+    (
+      < MINUS > e2 = multExp()
+      {
+        e1 = new BinaryOperatorApplication(BinaryOperator.MINUS, e1, e2);
+      }
+    )
+  )+
+  {
+    return e1;
+  }
+}
+
+Expression multExp() :
+{
+  Expression e1, e2;
+}
+{
+  e1 = preExp()
+  (
+    (
+      < MULTIPLY > e2 = preExp()
+      {
+        e1 = new BinaryOperatorApplication(BinaryOperator.MULT, e1, e2);
+      }
+    )
+  |
+    (
+      < DIV > e2 = preExp()
+      {
+        e1 = new BinaryOperatorApplication(BinaryOperator.DIV, e1, e2);
+      }
+    )
+  |
+    (
+      < MOD > e2 = preExp()
+      {
+        e1 = new BinaryOperatorApplication(BinaryOperator.MOD, e1, e2);
+      }
+    )
+  )+
+  {
+    return e1;
+  }
+} // + - MULT DIV MOD
+
+Expression preExp() :
+{
+  Expression e1, e2;
+}
+{
+  e1 = simpleExpr()
+  {
+    return e1;
+  }
+}
+
+Expression simpleExpr() :
+{
+  Expression e;
+}
+{
+  e = constant()
+  {
+    return e;
+  }
+| < LPAR > e = expr() < RPAR >
+  {
+    return e;
+  }
+}
+
+Expression constant() :
+{
+  Token t;
+}
+{
+  (
+    t = < CONST_BOOL >
+    {
+      return new ConstBool(t.image);
+    }
+    t = < CONST_INT >
+    {
+      return new ConstInt(t.image);
+    }
+    t = < CONST_FLOAT >
+    {
+      return new ConstFloat(t.image);
+    }
+  )
+}
