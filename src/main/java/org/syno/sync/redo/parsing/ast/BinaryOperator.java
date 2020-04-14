@@ -4,6 +4,7 @@ public enum BinaryOperator {
 	PLUS("+"), MINUS("-"), MULT("*"), DIV("/"), MOD("%"),
 	AND("&&"), OR("||"),
 	EQ("=="), NEQ("!="),
+	EVERY("EVERY"),
 	GREATER_THAN(">"), GREATER_OR_EQUAL(">="), 
 	LESSER_THAN("<"), LESSER_OR_EQUAL("<="),
 	FOLLOWED_BY("->");// Impl = pour la construction WHEN, aucun sens de le mettre là

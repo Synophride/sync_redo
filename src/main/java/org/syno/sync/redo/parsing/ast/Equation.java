@@ -8,7 +8,7 @@ public class Equation {
 		pattern = patt;
 		expression = expr;
 	}
-	
+
 	public Pattern getPattern() {
 		return pattern;
 	}

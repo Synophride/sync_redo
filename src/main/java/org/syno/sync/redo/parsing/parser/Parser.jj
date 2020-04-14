@@ -3,10 +3,10 @@
  */
 options
 {
-  LOOKAHEAD= 3;
+  LOOKAHEAD= 30;
 
 
-  static = true;
+  static = false;
   FORCE_LA_CHECK = true;
   CHOICE_AMBIGUITY_CHECK = 5;
 }
@@ -16,34 +16,26 @@ package org.syno.sync.redo.parsing.parser;
 import org.syno.sync.redo.parsing.ast.*;
 import java.util.Arrays;
 import java.util.List;
+import java.util.LinkedList;
 import java.util.ArrayList;
-import java.io.InputStreamReader;
+import java.io.StringReader;
+import java.io.BufferedReader;
 
 public class Parser
 {
-  public static void parseAST(InputStreamReader in)
+  public static Program parseAST(String input) throws ParseException
   {
-    Parser parser = new Parser(in);
-  }	
-
-  public static Expression mkBinaryOperation(
-  BinaryOperator op, 
-  List < Expression > operands, 
-  int beginIndex)
-  {
-    if (beginIndex == operands.size() - 1)
-    {
-      return operands.get(beginIndex);
-    }
-    Expression expGauche = operands.get(beginIndex);
-    Expression expDroite = mkBinaryOperation(op, operands, beginIndex + 1);
-    return new BinaryOperatorApplication(op, expGauche, expDroite);
+    BufferedReader reader = new BufferedReader(new StringReader(input));
+    Parser parser = new Parser(reader);
+    Program result = parser.program();
+    return result;
   }
 
-  public static Expression mkBinaryOperation(BinaryOperator op, 
-  List < Expression > operands)
+  public static Expression parseExpression(String input) throws ParseException
   {
-    return mkBinaryOperation(op, operands, 0);
+    BufferedReader reader = new BufferedReader(new StringReader(input));
+    Parser parser = new Parser(reader);
+    return parser.expr();
   }
 }
 
@@ -87,11 +79,7 @@ TOKEN :
 | < RPAR : ")" >
 | < LBRACKET : "{" >
 | < RBRACKET : "}" >
-}
-
-TOKEN :
-{
-  < CONST_INT : (< DIGIT >)+ >
+| < CONST_INT : (< DIGIT >)+ >
 | < CONST_FLOAT : (< DIGIT >)+ "." (< DIGIT >)* >
 | < #DIGIT : [ "0"-"9" ] >
 }
@@ -139,32 +127,39 @@ Program program() :
 
 List < Node > nodelist() :
 {
-  Node firstNode;
-  List < Node > liste;
+  Node node;
+  List < Node > nodeList = new ArrayList < Node > ();
 }
 {
-  firstNode = node() liste = nodelist()
+  (
+    node = node()
+    {
+      nodeList.add(node);
+    }
+  )*
   {
-    liste.add(firstNode);
-    return liste;
-  }
-|
-  {
-    return new ArrayList < Node > ();
+    return nodeList;
   }
 }
 
 Node node() :
 {
   String nodeName;
+  List < Parameter > inputs;
+  List < Parameter > outputs;
+  List < Equation > eqList;
+  List < Parameter > locals = new ArrayList < Parameter > ();
 }
 {
   < NODE > nodeName = ident() 
-  < LPAR > paramList() < RPAR > 
-  < RETURNS > nonNullParamList() 
-  < LBRACKET > eqList() < RBRACKET >
+  < LPAR > inputs = paramList() < RPAR > 
+  < RETURNS > outputs = nonNullParamList()
+  (
+    < VAR > locals = nonNullParamList()
+  )?
+  < LBRACKET > eqList = eqList() < RBRACKET >
   {
-    return new Node();
+    return new Node(nodeName, inputs, outputs, locals, eqList);
   }
 }
 
@@ -185,18 +180,18 @@ List < Parameter > paramList() :
 
 List < Parameter > nonNullParamList() :
 {
-  List < Parameter > param, paramList2;
+  List < Parameter > params, params2;
 }
 {
-  param = param() < SEMICOL > paramList2 = nonNullParamList()
+  params = param()
+  (
+    < SEMICOL > params2 = param()
+    {
+      for (Parameter p : params2) params.add(p);
+    }
+  )*
   {
-    for (Parameter p : param) 
-    paramList2.add(p);
-    return paramList2;
-  }
-  param = param()
-  {
-    return param;
+    return params;
   }
 }
 
@@ -217,17 +212,21 @@ List < Parameter > param() :
 
 List < String > nonVoidIdentifierList() :
 {
-  String identifier;
-  List < String > idList;
+  String id1, id2;
+  List < String > idList = new ArrayList < String > ();
 }
 {
-  identifier = ident()
+  id1 = ident()
   {
-    return Arrays.asList(identifier);
+    idList.add(id1);
   }
-| identifier = ident() < COMMA > idList = nonVoidIdentifierList()
+  (
+    < COMMA > id2 = ident()
+    {
+      idList.add(id2);
+    }
+  )*
   {
-    idList.add(identifier);
     return idList;
   }
 }
@@ -263,17 +262,17 @@ Type type() :
 List < Equation > eqList() :
 {
   Equation eq;
-  List < Equation > lst;
+  List < Equation > lst = new ArrayList < Equation > ();
 }
 {
-  eq = equation() lst = eqList()
+  (
+    eq = equation()
+    {
+      lst.add(eq);
+    }
+  )*
   {
-    lst.add(eq);
     return lst;
-  }
-|
-  {
-    return new ArrayList < Equation > ();
   }
 }
 
@@ -305,32 +304,16 @@ Pattern pattern() :
   }
 }
 
-/**
-	%left EVERY
-	%left MERGE
-	%left WHEN
-	
-	%right ARROW
-	%left IMPL
-	%left OR
-	%left AND
-	%left COMP EQUAL NEQ
-	%left PLUS MINUS
-	%left STAR SLASH DIV MOD
-	
-	%nonassoc uminus   
-	%nonassoc NOT PRE  not pre 
-*/
 Expression expr() :
 {
   Expression e;
 }
 {
-  e = conditionalExpr()
+  e = everyExp()
   {
     return e;
   }
-| e = everyExp()
+| e = conditionalExpr()
   {
     return e;
   }
@@ -354,17 +337,14 @@ Expression everyExp() :
 }
 {
   e1 = mergeExp()
-  {
-    expList.add(e1);
-  }
   (
     < EVERY > e2 = mergeExp()
     {
-      expList.add(e2);
+      e1 = new BinaryOperatorApplication(BinaryOperator.EVERY, e1, e2);
     }
   )*
   {
-    return mkBinaryOperation(BinaryOperator.PLUS, expList);
+    return e1;
   }
 }
 
@@ -381,7 +361,7 @@ Expression mergeExp() :
   Expression e;
 }
 {
-  e = arrowExp()
+  e = orExp()
   {
     return e;
   }
@@ -394,19 +374,16 @@ Expression arrowExp() :
   List < Expression > expList = new ArrayList < Expression > ();
 }
 {
-  (
-    e1 = orExp() < ARROW >
-    {
-      expList.add(e1);
-    }
-  )+
+e1 = orExp()
+
+(
   e2 = orExp()
   {
-    expList.add(e1);
+  e1 = new BinaryOperatorApplication(BinaryOperator.FOLLOWED_BY, e1, e2);  
   }
-  {
-    return mkBinaryOperation(BinaryOperator.FOLLOWED_BY, expList);
-  }
+)*
+
+{ return e1; }
 }
 
 Expression orExp() :
@@ -433,17 +410,14 @@ Expression andExp() :
 }
 {
   e1 = equalExp()
-  {
-    expList.add(e1);
-  }
   (
     < AND > e2 = equalExp()
     {
-      expList.add(e2);
+      e1=new BinaryOperatorApplication(BinaryOperator.AND, e1,e2);
     }
   )*
   {
-    return mkBinaryOperation(BinaryOperator.AND, expList);
+	return e1;
   }
 }
 
@@ -467,7 +441,7 @@ Expression equalExp() :
         e1 = new BinaryOperatorApplication(BinaryOperator.NEQ, e1, e2);
       }
     )
-  )+
+  )*
   {
     return e1;
   }
@@ -506,7 +480,7 @@ Expression compExp() :
         e1 = new BinaryOperatorApplication(BinaryOperator.LESSER_OR_EQUAL, e1, e2);
       }
     )
-  )+
+  )*
   {
     return e1;
   }
@@ -526,13 +500,14 @@ Expression addExp() :
         e1 = new BinaryOperatorApplication(BinaryOperator.PLUS, e1, e2);
       }
     )
+  |
     (
       < MINUS > e2 = multExp()
       {
         e1 = new BinaryOperatorApplication(BinaryOperator.MINUS, e1, e2);
       }
     )
-  )+
+  )*
   {
     return e1;
   }
@@ -543,42 +518,60 @@ Expression multExp() :
   Expression e1, e2;
 }
 {
-  e1 = preExp()
+  e1 = unaryOpExp()
   (
     (
-      < MULTIPLY > e2 = preExp()
+      < MULTIPLY > e2 = unaryOpExp()
       {
         e1 = new BinaryOperatorApplication(BinaryOperator.MULT, e1, e2);
       }
     )
   |
     (
-      < DIV > e2 = preExp()
+      < DIV > e2 = unaryOpExp()
       {
         e1 = new BinaryOperatorApplication(BinaryOperator.DIV, e1, e2);
       }
     )
   |
     (
-      < MOD > e2 = preExp()
+      < MOD > e2 = unaryOpExp()
       {
         e1 = new BinaryOperatorApplication(BinaryOperator.MOD, e1, e2);
       }
     )
-  )+
+  )*
   {
     return e1;
   }
 } // + - MULT DIV MOD
 
-Expression preExp() :
+Expression unaryOpExp() :
 {
-  Expression e1, e2;
+  Expression e;
+  List < UnaryOperator > l = new LinkedList < UnaryOperator > ();
 }
 {
-  e1 = simpleExpr()
+  (
+    (
+      < PRE >
+      {
+        l.add(0, UnaryOperator.PRE);
+      }
+    )
+  |
+    (
+      < NOT >
+      {
+        l.add(0, UnaryOperator.NOT);
+      }
+    )
+  )*
+  e = simpleExpr()
   {
-    return e1;
+    for (UnaryOperator op : l) 
+    e = new UnaryOperatorApplication(op, e);
+    return e;
   }
 }
 
@@ -587,13 +580,56 @@ Expression simpleExpr() :
   Expression e;
 }
 {
-  e = constant()
+  (
+    e = constant()
+  | < LPAR > e = expr() < RPAR >
+  | e = nodeCall()
+  | e = identifier()
+  )
   {
     return e;
   }
-| < LPAR > e = expr() < RPAR >
+}
+
+Expression identifier() :
+{
+  Token t;
+}
+{
+  t = < IDENT >
   {
-    return e;
+    return new Identifier(t.image);
+  }
+}
+
+Expression nodeCall() :
+{
+  Token id;
+  List < Expression > expList;
+}
+{
+  id = < IDENT > < LPAR > expList = expList() < RPAR >
+  {
+    return new NodeCall(id.image, expList);
+  }
+}
+
+List < Expression > expList() :
+{
+  List < Expression > l = new ArrayList < Expression > ();
+  Expression e;
+}
+{
+  (
+    e = expr() < COMMA > l = expList()
+    {
+      l.add(e);
+      return l;
+    }
+  )
+|
+  {
+    return l;
   }
 }
 
@@ -607,11 +643,11 @@ Expression constant() :
     {
       return new ConstBool(t.image);
     }
-    t = < CONST_INT >
+  | t = < CONST_INT >
     {
       return new ConstInt(t.image);
     }
-    t = < CONST_FLOAT >
+  | t = < CONST_FLOAT >
     {
       return new ConstFloat(t.image);
     }
