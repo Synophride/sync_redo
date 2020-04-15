@@ -3,7 +3,7 @@
  */
 options
 {
-  LOOKAHEAD= 30;
+  LOOKAHEAD= 2;
 
 
   static = false;
@@ -20,6 +20,8 @@ import java.util.LinkedList;
 import java.util.ArrayList;
 import java.io.StringReader;
 import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.FileNotFoundException;
 
 public class Parser
 {
@@ -36,6 +38,13 @@ public class Parser
     BufferedReader reader = new BufferedReader(new StringReader(input));
     Parser parser = new Parser(reader);
     return parser.expr();
+  }
+
+  public static Program parseFile(String path) throws ParseException, FileNotFoundException
+  {
+    FileReader f = new FileReader(path);
+    Parser parser = new Parser(f);
+    return parser.program();
   }
 }
 
@@ -136,7 +145,7 @@ List < Node > nodelist() :
     {
       nodeList.add(node);
     }
-  )*
+  )+
   {
     return nodeList;
   }
@@ -153,9 +162,9 @@ Node node() :
 {
   < NODE > nodeName = ident() 
   < LPAR > inputs = paramList() < RPAR > 
-  < RETURNS > outputs = nonNullParamList()
+  < RETURNS > outputs = nonNullParamList() < SEMICOL >
   (
-    < VAR > locals = nonNullParamList()
+    < VAR > locals = nonNullParamList() (< SEMICOL >)?
   )?
   < LBRACKET > eqList = eqList() < RBRACKET >
   {
@@ -165,16 +174,14 @@ Node node() :
 
 List < Parameter > paramList() :
 {
-  List < Parameter > paramList;
+  List < Parameter > params = new ArrayList < Parameter > ();
 }
 {
-  paramList = nonNullParamList()
+  (
+    params = nonNullParamList()
+  )?
   {
-    return paramList;
-  }
-|
-  {
-    return new ArrayList < Parameter > ();
+    return params;
   }
 }
 
@@ -294,14 +301,19 @@ Pattern pattern() :
   List < String > strList;
 }
 {
-  ident = ident()
-  {
-    return new Pattern(Arrays.asList(ident));
-  }
-  < LPAR > strList = nonVoidIdentifierList() < RPAR >
-  {
-    return new Pattern(strList);
-  }
+  (
+    ident = ident()
+    {
+      return new Pattern(Arrays.asList(ident));
+    }
+  )
+|
+  (
+    < LPAR > strList = nonVoidIdentifierList() < RPAR >
+    {
+      return new Pattern(strList);
+    }
+  )
 }
 
 Expression expr() :
@@ -309,11 +321,10 @@ Expression expr() :
   Expression e;
 }
 {
-  e = everyExp()
-  {
-    return e;
-  }
-| e = conditionalExpr()
+  (
+    e = everyExp()
+  | e = conditionalExpr()
+  )
   {
     return e;
   }
@@ -374,16 +385,16 @@ Expression arrowExp() :
   List < Expression > expList = new ArrayList < Expression > ();
 }
 {
-e1 = orExp()
-
-(
-  e2 = orExp()
+  e1 = orExp()
+  (
+    e2 = orExp()
+    {
+      e1 = new BinaryOperatorApplication(BinaryOperator.FOLLOWED_BY, e1, e2);
+    }
+  )*
   {
-  e1 = new BinaryOperatorApplication(BinaryOperator.FOLLOWED_BY, e1, e2);  
+    return e1;
   }
-)*
-
-{ return e1; }
 }
 
 Expression orExp() :
@@ -413,11 +424,11 @@ Expression andExp() :
   (
     < AND > e2 = equalExp()
     {
-      e1=new BinaryOperatorApplication(BinaryOperator.AND, e1,e2);
+      e1 = new BinaryOperatorApplication(BinaryOperator.AND, e1, e2);
     }
   )*
   {
-	return e1;
+    return e1;
   }
 }
 
@@ -474,6 +485,7 @@ Expression compExp() :
         e1 = new BinaryOperatorApplication(BinaryOperator.LESSER_THAN, e1, e2);
       }
     )
+  |
     (
       < LE > e2 = addExp()
       {
@@ -620,14 +632,16 @@ List < Expression > expList() :
   Expression e;
 }
 {
+  e = expr()
+  {
+    l.add(e);
+  }
   (
-    e = expr() < COMMA > l = expList()
+    < COMMA > e = expr()
     {
       l.add(e);
-      return l;
     }
-  )
-|
+  )*
   {
     return l;
   }

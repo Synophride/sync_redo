@@ -30,9 +30,9 @@ public class BinaryOperatorApplication extends Expression {
 	}
 	
 	public String toString() {
-		return subExprLeft + " " 
+		return "(" + subExprLeft
 				+ op
-				+ " " + subExprRight; 
+				+ " " + subExprRight + ")"; 
 	}
 	
 	public boolean equals(BinaryOperatorApplication other) {

@@ -10,4 +10,13 @@ public class NodeCall extends Expression {
 		nodeIdentifier = identifier;
 		parameters = params;
 	}
+	
+	public String toString() {
+		StringBuilder ret = new StringBuilder(); 
+		ret.append(nodeIdentifier);
+		for (Expression param : parameters) {
+			ret.append(param.toString());
+		}
+		return ret.toString();
+	}
 }

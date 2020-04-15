@@ -10,4 +10,8 @@ public class Parameter {
 	
 	public Type getType() {return type;}
 	public String getName() {return name;}
+	
+	public String toString() {
+		return name + ":" + type;
+	}
 }

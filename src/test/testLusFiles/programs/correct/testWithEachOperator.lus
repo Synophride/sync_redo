@@ -1,0 +1,37 @@
+node testAdd(in : int)
+returns outputAddFst, outputAddSnd: int;
+{
+	outputAddFst = 3 + 3;
+	outputAddSnd = in  + 3;
+}
+
+node testMult(in : int)
+returns output:bool;
+{
+	output = in * 3;
+}
+
+node testBool(b, b_ : bool)
+returns outAnd, outOr : bool;
+{
+	outAnd = b && b_;
+	outOr = b || b_;
+}
+
+node testComp(v, v_ : real)
+returns out: bool;
+var compgt, compge, complt, compge, eq, neq : bool;
+{
+	compgt = v > v_ ;
+	compge = v >= v_ ;
+	complt = v < v_ ;
+	comple = v <= v_;
+	eq = v == v_;
+	neq = v != v_;
+}
+
+node main()
+returns t : bool;
+{
+	t = true;
+}

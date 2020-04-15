@@ -16,4 +16,8 @@ public class Equation {
 	public Expression getExpression() {
 		return expression;
 	}
+	
+	public String toString() {
+		return pattern + " = " + expression;
+	}
 }

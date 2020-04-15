@@ -7,4 +7,14 @@ public class Pattern {
 	public Pattern(List<String> lst) {
 		identList = lst;
 	}
+	
+	public String toString() {
+		StringBuilder bd = new StringBuilder("(");
+		for(String id : identList) {
+			bd.append(id + ", ");
+		}
+		bd.append(")");
+		
+		return bd.toString();
+	}
 }

@@ -16,5 +16,4 @@ public class ConstInt extends Expression{
 	public String toString() {
 		return String.valueOf(value);
 	}
-	
 }

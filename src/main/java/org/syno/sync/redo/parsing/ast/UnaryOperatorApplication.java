@@ -8,4 +8,8 @@ public class UnaryOperatorApplication extends Expression {
 		op = operator;
 		subExpr=subExpression;
 	}
+	
+	public String toString() {
+		return op  + "(" + subExpr + ")";
+	}
 }

@@ -43,4 +43,27 @@ public class Node {
 		return localVars;
 	}
 	
+	public String toString() {
+		StringBuilder b = new StringBuilder();
+		b.append("NODE " + nodeName + "\n");
+		b.append(" IN: ");
+		for (Parameter p : inputs) {
+			b.append(p + ", ");
+		}
+		b.append("\n OUT: ");
+		for (Parameter p : outputs) {
+			b.append(p + ", ");
+		}
+		b.append("\n LOCALS: ");
+		for (Parameter p : localVars) {
+			b.append(p + ", ");
+		}
+		b.append("\n");
+		b.append("{");
+		for (Equation eq : equations)
+			b.append("\t" + eq + "\n");
+		b.append("}");
+		return b.toString();
+	}
+	
 }

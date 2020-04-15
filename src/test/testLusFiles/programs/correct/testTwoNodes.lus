@@ -1,0 +1,11 @@
+node main()
+returns out: int;
+{
+	out = secondNode(3);
+}
+
+node secondNode(input:int)
+returns o: int;
+{
+	o = input + 3;
+}
