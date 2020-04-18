@@ -3,7 +3,7 @@
  */
 options
 {
-  LOOKAHEAD= 2;
+  LOOKAHEAD= 20;
 
 
   static = false;
@@ -13,7 +13,9 @@ options
 
 PARSER_BEGIN(Parser)
 package org.syno.sync.redo.parsing.parser;
-import org.syno.sync.redo.parsing.ast.*;
+import org.syno.sync.redo.ast.expressions.*;
+import org.syno.sync.redo.ast.programstructure.*;
+import org.syno.sync.redo.ast.types.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.LinkedList;
@@ -205,14 +207,14 @@ List < Parameter > nonNullParamList() :
 List < Parameter > param() :
 {
   List < String > identifiers;
-  Type type;
+  BasicType type;
 }
 {
   identifiers = nonVoidIdentifierList() < COLON > type = type()
   {
     List < Parameter > params = new ArrayList < Parameter > ();
     for (String idt : identifiers) 
-    params.add(new Parameter(idt, type));
+    params.add(new Parameter(idt, new SimpleType(type)));
     return params;
   }
 }
@@ -249,20 +251,20 @@ String ident() :
   }
 }
 
-Type type() :
+BasicType type() :
 {}
 {
   < BOOL >
   {
-    return Type.BOOL;
+    return BasicType.BOOL;
   }
 | < INT >
   {
-    return Type.INT;
+    return BasicType.INT;
   }
 | < REAL >
   {
-    return Type.REAL;
+    return BasicType.REAL;
   }
 }
 
@@ -297,23 +299,38 @@ Equation equation() :
 
 Pattern pattern() :
 {
-  String ident;
-  List < String > strList;
+  Pattern p;
+  List < Pattern > subPatterns = new ArrayList < Pattern > ();
+  SimplePattern sp;
+  Token t;
 }
 {
   (
-    ident = ident()
+    t = < IDENT >
     {
-      return new Pattern(Arrays.asList(ident));
+      return new SimplePattern(t.image);
     }
   )
 |
   (
-    < LPAR > strList = nonVoidIdentifierList() < RPAR >
-    {
-      return new Pattern(strList);
-    }
+    < LPAR >
+    (
+      p = pattern()
+      {
+        subPatterns.add(p);
+      }
+    )
+    (
+      < COMMA > p = pattern()
+      {
+        subPatterns.add(p);
+      }
+    )+
+    < RPAR >
   )
+  {
+    return new CompoundPattern(subPatterns);
+  }
 }
 
 Expression expr() :
@@ -324,9 +341,33 @@ Expression expr() :
   (
     e = everyExp()
   | e = conditionalExpr()
+  | e = tupleExpr()
   )
   {
     return e;
+  }
+}
+
+Expression tupleExpr() :
+{
+  List < Expression > expressions = new ArrayList < Expression > ();
+  Expression e;
+  Token tokenBegin, tokenEnd;
+}
+{
+  tokenBegin = < LPAR > e = expr()
+  {
+    expressions.add(e);
+  }
+  (
+    < COMMA > e = expr()
+    {
+      expressions.add(e);
+    }
+  )+
+  tokenEnd = < RPAR >
+  {
+    return new Tuple(expressions);
   }
 }
 
@@ -378,7 +419,7 @@ Expression mergeExp() :
   }
 }
 
-// Assoc droite ! 
+// TODO: Assoc droite ! 
 Expression arrowExp() :
 {
   Expression e1, e2;
@@ -663,7 +704,7 @@ Expression constant() :
     }
   | t = < CONST_FLOAT >
     {
-      return new ConstFloat(t.image);
+      return new ConstReal(t.image);
     }
   )
 }

@@ -1,28 +1,24 @@
 package org.syno.sync.redo.main;
 
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.StringReader;
+import java.util.HashSet;
+import java.util.LinkedList;
 
-import org.syno.sync.redo.parsing.ast.Expression;
 import org.syno.sync.redo.parsing.parser.ParseException;
-import org.syno.sync.redo.parsing.parser.Parser;
 
+/**
+ * TODO: Gestion des types tuple dans d'autres tuples ? -> Implique
+ * refactorisation de la classe pattern et du parser -> Refacto des méthodes
+ * getType() TODO: Javadoc TODO: refacto du parser ? TODO: Ajout de la
+ * localisation dans le parseur
+ */
 public final class Main {
-	public static void main(String... args) throws ParseException, FileNotFoundException {
-		File folder = new File("/home/jguyot2/workspace/sync.redo/src/test/testLusFiles/programs/correct/");
-		File[] listOfFiles = folder.listFiles();
-		
-		for(File f :listOfFiles) {
-			if(! f.getName().endsWith(".lus"))
-				continue;
-			System.out.println("Parsing " + f + "...");
-			Parser p = new Parser(new FileReader(f));
-			System.out.println();
-			System.out.println(p.program());
-			System.out.println();
-			System.out.println();
-		}
+	public static void main(final String... args) throws ParseException, FileNotFoundException {
+		// List<Object> l1, l2;
+		HashSet<Object> l1;
+		LinkedList<Object> l2;
+		l1 = new HashSet<>();
+		l2 = new LinkedList<>();
+		System.out.println(l1.equals(l2));
 	}
 }
