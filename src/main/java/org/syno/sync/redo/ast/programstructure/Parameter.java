@@ -2,6 +2,10 @@ package org.syno.sync.redo.ast.programstructure;
 
 import org.syno.sync.redo.ast.types.SimpleType;
 
+/**
+ * Représente une variable locale, associée à son type 
+ * @author jguyot2
+ */
 public class Parameter {
 	private final String name;
 	private final SimpleType type;

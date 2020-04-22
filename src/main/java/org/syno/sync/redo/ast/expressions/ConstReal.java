@@ -6,6 +6,11 @@ import org.syno.sync.redo.typing.Environment;
 import org.syno.sync.redo.typing.NodeNotFoundException;
 import org.syno.sync.redo.typing.VariableNotFoundException;
 
+/**
+ * Constante flottante
+ * @author jguyot2
+ *
+ */
 public class ConstReal extends Expression {
 	private final double value;
 
@@ -27,11 +32,11 @@ public class ConstReal extends Expression {
 	}
 
 	@Override
-	public String toString() {
-		return String.valueOf(value);
+	public void preprocessing(final Environment e) throws VariableNotFoundException, NodeNotFoundException {
 	}
 
 	@Override
-	public void preprocessing(Environment e) throws VariableNotFoundException, NodeNotFoundException {
+	public String toString() {
+		return String.valueOf(value);
 	}
 }

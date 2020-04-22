@@ -10,14 +10,14 @@ public class Environment {
 	private HashMap<String, SimpleType> locals;
 	private HashMap<String, NodeInfo> nodes;
 
-	public Environment(HashMap<String, SimpleType> locals, HashMap<String, NodeInfo> nodeInformation) {
-		this.locals = locals;
-		nodes = nodeInformation;
-	}
-
 	public Environment() {
 		locals = new HashMap<>();
 		nodes = new HashMap<>();
+	}
+
+	public Environment(final HashMap<String, SimpleType> locals, final HashMap<String, NodeInfo> nodeInformation) {
+		this.locals = locals;
+		nodes = nodeInformation;
 	}
 
 	public void addLocal(final String nodeName, final SimpleType typ) {

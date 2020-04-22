@@ -7,7 +7,14 @@ import java.util.Set;
 import org.syno.sync.redo.ast.types.CompoundType;
 import org.syno.sync.redo.ast.types.Type;
 import org.syno.sync.redo.typing.Environment;
+import org.syno.sync.redo.typing.VariableNotFoundException;
 
+/**
+ * Classe représentant un pattern composé de sous-patterns
+ * 
+ * @author jguyot2
+ *
+ */
 public class CompoundPattern extends Pattern {
 	private final List<Pattern> patternList;
 
@@ -30,7 +37,6 @@ public class CompoundPattern extends Pattern {
 		return false;
 	}
 
-	// TODO : getter
 	@Override
 	public String toString() {
 		StringBuilder bd = new StringBuilder("(");
@@ -42,8 +48,18 @@ public class CompoundPattern extends Pattern {
 	}
 
 	@Override
-	public void verifyUniquenessOfAssignments(Environment e, Set<String> sawIdenifiers) throws AlreadyFoundException {
-		for(Pattern subPattern : patternList)
+	public void verifyUniquenessOfAssignments(final Environment e, final Set<String> sawIdenifiers)
+			throws AlreadyFoundException {
+		for (Pattern subPattern : patternList) {
 			subPattern.verifyUniquenessOfAssignments(e, sawIdenifiers);
+		}
 	}
+
+	@Override
+	public void verifyVarnameExistence(Environment e) throws VariableNotFoundException {
+		for(Pattern p : patternList)
+			p.verifyVarnameExistence(e);
+	}
+	
+	
 }

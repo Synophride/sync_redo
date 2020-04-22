@@ -10,6 +10,11 @@ import org.syno.sync.redo.typing.NodeNotFoundException;
 import org.syno.sync.redo.typing.TypingException;
 import org.syno.sync.redo.typing.VariableNotFoundException;
 
+
+/**
+ * représente un n-uplet
+ * @author jguyot2
+ */
 public class Tuple extends Expression {
 	List<Expression> subExpressions;
 
@@ -32,8 +37,9 @@ public class Tuple extends Expression {
 	}
 
 	@Override
-	public void preprocessing(Environment e) throws VariableNotFoundException, NodeNotFoundException {
-		for(Expression subExp : subExpressions)
+	public void preprocessing(final Environment e) throws VariableNotFoundException, NodeNotFoundException {
+		for (Expression subExp : subExpressions) {
 			subExp.preprocessing(e);
+		}
 	}
 }

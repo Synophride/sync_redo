@@ -6,7 +6,7 @@ returns outputAddFst, outputAddSnd: int;
 }
 
 node testMult(in : int)
-returns output:bool;
+returns output:int;
 {
 	output = in * 3;
 }
@@ -20,7 +20,7 @@ returns outAnd, outOr : bool;
 
 node testComp(v, v_ : real)
 returns out: bool;
-var compgt, compge, complt, compge, eq, neq : bool;
+var compgt, compge, complt, comple, eq, neq : bool;
 {
 	compgt = v > v_ ;
 	compge = v >= v_ ;

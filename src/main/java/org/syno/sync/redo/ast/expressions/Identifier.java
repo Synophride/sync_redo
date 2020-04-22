@@ -7,9 +7,15 @@ import org.syno.sync.redo.ast.types.Type;
 import org.syno.sync.redo.typing.Environment;
 import org.syno.sync.redo.typing.VariableNotFoundException;
 
+/**
+ * Expression constituée d'un nom de variable
+ * @author jguyot2
+ *
+ */
 public class Identifier extends Expression {
 	private final String identifier;
 
+	
 	public Identifier(final String s) {
 		identifier = s;
 	}
@@ -21,13 +27,14 @@ public class Identifier extends Expression {
 	}
 
 	@Override
-	public String toString() {
-		return identifier;
+	public void preprocessing(final Environment e) throws VariableNotFoundException {
+		if (!e.getLocals().containsKey(identifier)) {
+			throw new VariableNotFoundException(identifier);
+		}
 	}
 
 	@Override
-	public void preprocessing(Environment e) throws VariableNotFoundException {
-		if(! e.getLocals().containsKey(identifier))
-			throw new VariableNotFoundException(identifier);
+	public String toString() {
+		return identifier;
 	}
 }

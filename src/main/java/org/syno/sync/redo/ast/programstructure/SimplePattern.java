@@ -4,7 +4,14 @@ import java.util.Set;
 
 import org.syno.sync.redo.ast.types.Type;
 import org.syno.sync.redo.typing.Environment;
+import org.syno.sync.redo.typing.VariableNotFoundException;
 
+/**
+ * Pattern simple, id est composé uniquement d'un identifieur
+ * 
+ * @author jguyot2
+ *
+ */
 public class SimplePattern extends Pattern {
 	private final String identifier;
 
@@ -27,9 +34,21 @@ public class SimplePattern extends Pattern {
 	}
 
 	@Override
-	public void verifyUniquenessOfAssignments(Environment e, Set<String> sawIdenifiers) throws AlreadyFoundException {
-		if(sawIdenifiers.contains(identifier))
+	public void verifyUniquenessOfAssignments(final Environment e, final Set<String> sawIdenifiers)
+			throws AlreadyFoundException {
+		if (sawIdenifiers.contains(identifier)) {
 			throw new AlreadyFoundException();
+		}
 		sawIdenifiers.add(identifier);
+	}
+
+	@Override
+	public void verifyVarnameExistence(Environment e) throws VariableNotFoundException {
+		if (!e.getLocals().containsKey(identifier))
+			throw new VariableNotFoundException(identifier);
+	}
+
+	public String toString() {
+		return identifier;
 	}
 }

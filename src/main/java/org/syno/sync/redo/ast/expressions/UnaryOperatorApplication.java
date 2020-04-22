@@ -6,6 +6,11 @@ import org.syno.sync.redo.typing.NodeNotFoundException;
 import org.syno.sync.redo.typing.TypingException;
 import org.syno.sync.redo.typing.VariableNotFoundException;
 
+/**
+ * Opération unaire.
+ * @author jguyot2
+ *
+ */
 public class UnaryOperatorApplication extends Expression {
 	private final UnaryOperator op;
 	private final Expression subExpr;
@@ -21,17 +26,17 @@ public class UnaryOperatorApplication extends Expression {
 		if (op.isLegitInputType(subExpressionType)) {
 			return subExpressionType;
 		} else {
-			throw new TypingException();
+			throw new TypingException(op.getExpectedType(subExpressionType), subExpressionType);
 		}
+	}
+
+	@Override
+	public void preprocessing(final Environment e) throws VariableNotFoundException, NodeNotFoundException {
+		subExpr.preprocessing(e);
 	}
 
 	@Override
 	public String toString() {
 		return op + "(" + subExpr + ")";
-	}
-
-	@Override
-	public void preprocessing(Environment e) throws VariableNotFoundException, NodeNotFoundException {
-		subExpr.preprocessing(e);
 	}
 }

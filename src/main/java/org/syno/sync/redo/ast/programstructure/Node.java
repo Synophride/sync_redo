@@ -13,6 +13,11 @@ import org.syno.sync.redo.typing.NodeNotFoundException;
 import org.syno.sync.redo.typing.TypingException;
 import org.syno.sync.redo.typing.VariableNotFoundException;
 
+/**
+ * Noeud d'un programme
+ * 
+ * @author jguyot2
+ */
 public class Node {
 
 	private final List<Equation> equations;
@@ -39,6 +44,11 @@ public class Node {
 		return inputs;
 	}
 
+	/**
+	 * Détermine le type attendu en entrée du noeud.
+	 * 
+	 * @return Le type attendu
+	 */
 	public Type getInputType() {
 		switch (inputs.size()) {
 		case 0:
@@ -50,6 +60,23 @@ public class Node {
 		}
 	}
 
+	/**
+	 * Rend une map les variables locales à un noeud, dont les paramètres
+	 */
+	public HashMap<String, SimpleType> getLocals() {
+		HashMap<String, SimpleType> ret = new HashMap<>();
+		for (Parameter p : inputs) {
+			ret.put(p.getName(), p.getType());
+		}
+		for (Parameter p : localVars) {
+			ret.put(p.getName(), p.getType());
+		}
+		for (Parameter p : outputs) {
+			ret.put(p.getName(), p.getType());
+		}
+		return ret;
+	}
+
 	public List<Parameter> getLocalVars() {
 		return localVars;
 	}
@@ -58,8 +85,48 @@ public class Node {
 		return nodeName;
 	}
 
+	/**
+	 * Informations à propos du noeud = les types d'entrée et de sortie
+	 */
+	public NodeInfo getNodeInformation() {
+		return new NodeInfo(getInputType(), getOutputType());
+	}
+
 	public List<Parameter> getOutputs() {
 		return outputs;
+	}
+
+	/**
+	 * Rend le type en sortie
+	 * 
+	 * @return
+	 */
+	public Type getOutputType() {
+		List<Type> typeList = outputs.stream().map(parameter -> parameter.getType()).collect(Collectors.toList());
+		switch (typeList.size()) {
+		case 0:
+			throw new Error("Output void type/node without outputs");
+		case 1:
+			return typeList.get(0);
+		default:
+			return new CompoundType(typeList);
+		}
+	}
+
+	/**
+	 * Vérifie les propriétés du programme: Pas d'appel de variable non déclarée,
+	 * pas d'appel de noeud non déclaré pas deux assignation de variables dans un
+	 * noeud pas d'assignation d'une entrée dans un noeud [opt] : Assignation de
+	 * toutes les sorties.
+	 * 
+	 * @throws AlreadyFoundException
+	 * @throws NodeNotFoundException
+	 * @throws VariableNotFoundException
+	 */
+	public void preprocess(final Environment e)
+			throws VariableNotFoundException, NodeNotFoundException, AlreadyFoundException {
+		for (Equation eq : this.equations)
+			eq.preprocess(e);
 	}
 
 	@Override
@@ -87,49 +154,16 @@ public class Node {
 		return b.toString();
 	}
 
-	public NodeInfo getNodeInformation() {
-		return new NodeInfo(getInputType(), getOutputType());
-	}
-
-	public void typeNode(Environment e) throws TypingException, VariableNotFoundException, NodeNotFoundException {
-		for(Equation eq : equations)
-			eq.type(e);
-	}
-	
-	public HashMap<String, SimpleType> getLocals() {
-		HashMap<String, SimpleType> ret = new HashMap<>();
-		for (Parameter p : inputs) {
-			ret.put(p.getName(), p.getType());
-		}
-		for (Parameter p : localVars) {
-			ret.put(p.getName(), p.getType());
-		}
-		for (Parameter p : outputs) {
-			ret.put(p.getName(), p.getType());
-		}
-		return ret;
-	}
-
-	public Type getOutputType() {
-		List<Type> typeList = outputs.stream().map(parameter -> parameter.getType()).collect(Collectors.toList());
-		switch (typeList.size()) {
-		case 0:
-			throw new Error("Output void type/node without outputs");
-		case 1:
-			return typeList.get(0);
-		default:
-			return new CompoundType(typeList);
-		}
-	}
-	
 	/**
-	 * Vérifie les propriétés du programme:
-	 *  Pas d'appel de variable non déclarée,
-	 *  pas d'appel de noeud non déclaré
-	 *  pas deux assignation de variables dans un noeud
-	 *  pas d'assignation d'une entrée dans un noeud
-	 *  [opt] : Assignation de toutes les sorties. 
+	 * Typage du noeud
+	 * 
+	 * @param e environnement associé au noeud courant
+	 * @throws TypingException si le type n'est pas correct
 	 */
-	public void preprocess(Environment e) {
+	public void typeNode(final Environment e) throws TypingException {
+		for (Equation eq : equations) {
+			System.out.println(this);
+			eq.type(e);
+		}
 	}
 }

@@ -1,30 +1,37 @@
 package org.syno.sync.redo.ast.expressions;
 
+import java.util.Arrays;
+
+import org.syno.sync.redo.ast.types.CompoundType;
 import org.syno.sync.redo.ast.types.SimpleType;
 import org.syno.sync.redo.ast.types.Type;
 
+/**
+ * Enumération représentant les opérateurs binaires associés aux opérations
+ * 
+ * @author jguyot2
+ *
+ */
 public enum BinaryOperator {
 
-	AND("&&", InputType.BOOLEAN), DIV("/", InputType.NUMBER), EQ("==", InputType.ANY),
-	EVERY("EVERY", InputType.ANY_THEN_BOOL), FOLLOWED_BY("->", InputType.ANY), GREATER_OR_EQUAL(">=", InputType.NUMBER),
-	GREATER_THAN(">", InputType.NUMBER), LESSER_OR_EQUAL("<=", InputType.NUMBER), LESSER_THAN("<", InputType.NUMBER),
-	MINUS("-", InputType.NUMBER), MOD("%", InputType.INTEGER), MULT("*", InputType.NUMBER), NEQ("!=", InputType.ANY),
-	OR("||", InputType.BOOLEAN), PLUS("+", InputType.NUMBER);// Impl = pour la construction WHEN, aucun
-																// sens de le mettre là
-	// Peut-être changer ça ? => Dégager l'enum privée ou changer les identifieurs ?
+	AND("&&"), DIV("/"), EQ("=="), EVERY("EVERY"), FOLLOWED_BY("->"), GREATER_OR_EQUAL(">="), GREATER_THAN(">"),
+	LESSER_OR_EQUAL("<="), LESSER_THAN("<"), MINUS("-"), MOD("%"), MULT("*"), NEQ("!="), OR("||"), PLUS("+");
 
-	private enum InputType {
-		ANY, ANY_THEN_BOOL, BOOLEAN, INTEGER, NUMBER;
-	}
-
-	private InputType expectedInputs; // TODO: dégager ça
+	// représentation de la chaîne
 	private String s;
 
-	private BinaryOperator(final String str, final InputType t) {
+	private BinaryOperator(final String str) {
 		s = str;
-		expectedInputs = t;
 	}
 
+	/**
+	 * Affiche le type de retour attendu par l'opérateur courant en fonction des
+	 * opérandes en entrée, sans vérification du correct des opérateurs.
+	 * 
+	 * @param leftOperandType
+	 * @param rightOperandType
+	 * @return Le type attendu en fonction des entrées
+	 */
 	public Type getReturnType(final Type leftOperandType, final Type rightOperandType) {
 		switch (this) {
 		case AND:
@@ -49,8 +56,13 @@ public enum BinaryOperator {
 		}
 	}
 
-	// TODO : faire en sorte de pouvoir déterminer le type attendu dans le cas de
-	// mauvais appels
+	/**
+	 * Détermine si les entrées sont de type correct par rapport à l'opérateur
+	 * 
+	 * @param leftOperandType
+	 * @param rightOperandType
+	 * @return true si l'appel est correct, false sinon
+	 */
 	public boolean isCorrectCall(final Type leftOperandType, final Type rightOperandType) {
 		switch (this) {
 		case AND:
@@ -79,8 +91,37 @@ public enum BinaryOperator {
 		}
 	}
 
-	public boolean isReturnInput() {
-		throw new Error("not implemented");
+	public Type getExpectedType(Type leftOperandType, Type rightOperandType) {
+		switch (this) {
+		case AND:
+		case OR:
+			return new CompoundType(Arrays.asList(SimpleType.getBool(), SimpleType.getBool()));
+		case LESSER_OR_EQUAL:
+		case LESSER_THAN:
+		case GREATER_OR_EQUAL:
+		case GREATER_THAN:
+		case PLUS:
+		case MINUS:
+		case MULT:
+		case DIV:
+			if (leftOperandType.isNumber())
+				return new CompoundType(Arrays.asList(leftOperandType, leftOperandType));
+			else if (rightOperandType.isNumber())
+				return new CompoundType(Arrays.asList(rightOperandType, rightOperandType));
+			else
+				return new CompoundType(Arrays.asList(SimpleType.getInt(), SimpleType.getInt()));
+
+		case NEQ:
+		case EQ:
+		case FOLLOWED_BY:
+			return new CompoundType(Arrays.asList(leftOperandType, leftOperandType));
+		case EVERY:
+			return new CompoundType(Arrays.asList(leftOperandType, SimpleType.getBool()));
+		case MOD:
+			return new CompoundType(Arrays.asList(SimpleType.getInt(), SimpleType.getInt()));
+		default:
+			throw new Error();
+		}
 	}
 
 	@Override

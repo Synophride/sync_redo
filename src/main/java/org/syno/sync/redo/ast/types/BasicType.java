@@ -1,5 +1,11 @@
 package org.syno.sync.redo.ast.types;
 
+
+/**
+ * Enumération représentant les types atomiques
+ * @author jguyot2
+ *
+ */
 public enum BasicType {
 	BOOL("bool"), INT("int"), REAL("float");
 

@@ -9,6 +9,13 @@ import org.syno.sync.redo.typing.NodeNotFoundException;
 import org.syno.sync.redo.typing.TypingException;
 import org.syno.sync.redo.typing.VariableNotFoundException;
 
+/**
+ * représente une expression conditionnelle, de la forme "if <exp> then <exp>
+ * else <exp>"
+ * 
+ * @author jguyot2
+ *
+ */
 public class Conditional extends Expression {
 	private final Expression elseExpr;
 	private final Expression ifExpr;
@@ -41,16 +48,15 @@ public class Conditional extends Expression {
 	}
 
 	@Override
-	public String toString() {
-		return "if ( " + ifExpr + " ) then ( " + thenExpr + " ) else ( " + elseExpr + ")";
-	}
-
-	@Override
-	public void preprocessing(Environment e) throws VariableNotFoundException, NodeNotFoundException {
+	public void preprocessing(final Environment e) throws VariableNotFoundException, NodeNotFoundException {
 		ifExpr.preprocessing(e);
 		thenExpr.preprocessing(e);
 		elseExpr.preprocessing(e);
 	}
-	
+
+	@Override
+	public String toString() {
+		return "if ( " + ifExpr + " ) then ( " + thenExpr + " ) else ( " + elseExpr + ")";
+	}
 
 }

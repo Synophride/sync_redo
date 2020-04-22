@@ -11,4 +11,8 @@ public abstract class Type {
 	public abstract boolean isSimple();
 
 	public abstract boolean isVoid();
+	
+	public abstract String toString();
+	
+	public abstract boolean equals(Type other);
 }

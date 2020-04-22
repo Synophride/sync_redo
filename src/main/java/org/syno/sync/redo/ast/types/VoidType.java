@@ -1,5 +1,11 @@
 package org.syno.sync.redo.ast.types;
 
+/**
+ * Type vide, uniquement utilisé pour indiquer le type d'entrée des
+ * noeuds qui ne prennent pas de paramètre
+ * @author jguyot2
+ *
+ */
 public class VoidType extends Type {
 	private static final VoidType instance = new VoidType();
 
@@ -9,10 +15,6 @@ public class VoidType extends Type {
 
 	private VoidType() {
 	};
-
-	public boolean equals(final VoidType other) {
-		return true;
-	}
 
 	@Override
 	public boolean isBoolean() {
@@ -38,4 +40,15 @@ public class VoidType extends Type {
 	public boolean isVoid() {
 		return true;
 	}
+
+	@Override
+	public String toString() {
+		return "void";
+	}
+
+	@Override
+	public boolean equals(Type other) {
+		return other instanceof VoidType;
+	}
+
 }

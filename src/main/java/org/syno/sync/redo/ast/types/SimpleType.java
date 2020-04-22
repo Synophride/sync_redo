@@ -1,5 +1,11 @@
 package org.syno.sync.redo.ast.types;
 
+
+/**
+ * Type contenant uniquement un type atomique
+ * @author jguyot2
+ *
+ */
 public class SimpleType extends Type {
 	public static SimpleType getBool() {
 		return new SimpleType(BasicType.BOOL);
@@ -51,4 +57,19 @@ public class SimpleType extends Type {
 	public boolean isVoid() {
 		return false;
 	}
+	
+	public String toString() {
+		return this.t.toString();
+	}
+
+	@Override
+	public boolean equals(Type other) {
+
+		if(other instanceof SimpleType)
+			return this.equals((SimpleType) other);
+		else 
+			return false;
+	}
+
+
 }

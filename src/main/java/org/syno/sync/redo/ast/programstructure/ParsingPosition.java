@@ -1,5 +1,10 @@
 package org.syno.sync.redo.ast.programstructure;
 
+/**
+ * Position de parsing dans un fichier
+ * @author jguyot2
+ *
+ */
 public class ParsingPosition {
 	private final int beginColumn;
 	private final int beginLine;
