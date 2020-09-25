@@ -35,11 +35,4 @@ public abstract class Expression {
 	 */
 	public abstract void preprocessing(Environment e) throws VariableNotFoundException, NodeNotFoundException;
 
-	/**
-	 * 
-	 * @param e
-	 * @return
-	 */
-	public abstract Clock getClock(Environment e);
-
 }

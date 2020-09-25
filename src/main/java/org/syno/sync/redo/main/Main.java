@@ -12,13 +12,14 @@ import org.syno.sync.redo.parsing.parser.Parser;
 
 /**
  * TODO: Clock typing
+ * TODO: refaire le preprocessing de l'instruction EVERY.
  * TODO: Vérification d'absence de boucles de causalité
  * TODO: Normalisation
  * TODO: Pseudo-cache pour le type (=mémoriser le type associé à chaque expression)
- * TODO: Ajout de la localisation dans le parseur
+ * TODO: Ajout de la localisation dans le parseur 
  */
 public final class Main {
-	public static void main(final String... args)
+	public static void main(final String... args) 
 			throws Exception {
 		File folder = new File("/home/jguyot2/workspace/sync.redo/src/test/testLusFiles/programs/correct/");
 		File[] listOfFiles = folder.listFiles();
@@ -36,7 +37,6 @@ public final class Main {
 			System.out.println();
 			System.out.println(prog);
 			System.out.println();
-			
 			System.out.println();
 		}
 	}
